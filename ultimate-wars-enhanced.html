@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ULTIMATE TRADER OMNIBUS</title>
+  <link rel="manifest" href="data:application/manifest+json,{
+    \"name\": \"Trader Omnibus\",
+    \"short_name\": \"Omnibus\",
+    \"start_url\": \".\",
+    \"display\": \"standalone\",
+    \"background_color\": \"#000\",
+    \"theme_color\": \"#0f0\",
+    \"icons\": [{ \"src\": \"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E💰%3C/text%3E%3C/svg%3E\", \"sizes\": \"any\" }]
+  }">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Roboto+Mono&display=swap');
+    :root { --bg: #000; --accent: #0f0; --card: #111; --border: #0f0; --text: #0f0; --gold: #0ff; --warn: #f00; }
+    body { background: var(--bg); color: var(--text); font-family: 'Roboto Mono', monospace; text-align: center; margin: 0; padding: 20px; overflow-x: hidden; }
+    h1 { font-family: 'Orbitron', sans-serif; color: var(--gold); text-shadow: 0 0 15px var(--gold); font-size: 2.5em; margin: 10px 0; }
+    h2 { font-family: 'Orbitron', sans-serif; color: var(--accent); }
+    h3 { color: var(--gold); margin: 15px 0 10px 0; }
+    #menu, #game, #endScreen, #leaderboardScreen, #settingsScreen { max-width: 800px; margin: 20px auto; background: var(--card); border: 2px solid var(--border); border-radius: 15px; padding: 20px; box-shadow: 0 0 25px var(--accent); }
+    .game-btn { 
+      background: #001a00; color: var(--accent); border: 1px solid var(--border); padding: 15px; margin: 8px; border-radius: 10px; cursor: pointer; 
+      font-weight: bold; transition: all 0.3s; width: 90%; max-width: 400px; display: inline-block;
+    }
+    .game-btn:hover { background: var(--accent); color: #000; transform: scale(1.05); }
+    .hidden { display: none; }
+    .stats { margin: 15px 0; font-size: 1.1em; padding: 10px; background: #001100; border-radius: 8px; }
+    .item { margin: 8px 0; padding: 10px; background: #002200; border-radius: 8px; border: 1px solid var(--border); }
+    button { background: #000; color: var(--accent); border: 1px solid var(--border); padding: 8px 15px; margin: 3px; border-radius: 5px; cursor: pointer; font-family: 'Roboto Mono', monospace; }
+    button:hover { background: var(--accent); color: #000; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    input { width: 60px; padding: 5px; background: #000; color: var(--text); border: 1px solid var(--border); border-radius: 3px; font-family: 'Roboto Mono', monospace; }
+    .event { color: var(--warn); font-weight: bold; animation: blink 1s infinite; margin: 5px 0; padding: 5px; background: #200; border-radius: 5px; }
+    .good-event { color: var(--gold); font-weight: bold; }
+    @keyframes blink { 50% { opacity: 0.5; } }
+    .back-btn { background: #300; color: #fff; margin-top: 20px; padding: 10px 20px; }
+    .price-up { color: #0f0; }
+    .price-down { color: #f00; }
+    #eventLog { max-height: 150px; overflow-y: auto; margin: 10px 0; padding: 10px; background: #000; border-radius: 5px; text-align: left; }
+    .upgrade-bought { background: #003300 !important; }
+    .menu-btn-row { margin: 20px 0; }
+    .version { color: #666; font-size: 0.8em; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+  <div id="menu">
+    <h1>⚡ ULTIMATE TRADER ⚡</h1>
+    <p>Choose Your Game. Survive. Profit.</p>
+    <div id="gameList"></div>
+    <div class="menu-btn-row">
+      <button onclick="showLeaderboard()">🏆 LEADERBOARD</button>
+      <button onclick="showSettings()">⚙️ SETTINGS</button>
+    </div>
+    <p class="version">v2.0 Enhanced Edition</p>
+  </div>
+
+  <div id="game" class="hidden">
+    <h1 id="title">LOADING...</h1>
+    <p id="tagline"></p>
+    <div id="gameScreen"></div>
+    <button class="back-btn" onclick="showMenu()">⬅️ BACK TO MENU</button>
+  </div>
+
+  <div id="endScreen" class="hidden">
+    <h2>🏁 GAME OVER</h2>
+    <p id="finalScore"></p>
+    <input type="text" id="playerName" placeholder="Your Name" maxlength="20" />
+    <button onclick="saveScore()">💾 Save Score</button><br><br>
+    <button onclick="startGame(currentGame)">🔄 Play Again</button>
+    <button class="back-btn" onclick="showMenu()">⬅️ Back to Menu</button>
+  </div>
+
+  <div id="leaderboardScreen" class="hidden">
+    <h2>🏆 LEADERBOARD</h2>
+    <div id="leaderboard"></div>
+    <button onclick="clearLeaderboard()" style="background: #500; margin-top: 10px;">🗑️ Clear Current</button>
+    <button class="back-btn" onclick="showMenu()">⬅️ Back to Menu</button>
+  </div>
+
+  <div id="settingsScreen" class="hidden">
+    <h2>⚙️ SETTINGS</h2>
+    <div style="margin: 20px 0;">
+      <label><input type="checkbox" id="soundToggle" checked onchange="toggleSound()"> 🔊 Sound Effects</label><br><br>
+      <label><input type="checkbox" id="autosaveToggle" checked onchange="toggleAutosave()"> 💾 Auto-save Progress</label><br><br>
+      <button onclick="clearAllData()" style="background: #500;">🗑️ Clear All Data</button>
+    </div>
+    <button class="back-btn" onclick="showMenu()">⬅️ Back to Menu</button>
+  </div>
+
+<script>
+  // ———————————————————— SETTINGS ————————————————————
+  let settings = {
+    sound: true,
+    autosave: true
+  };
+
+  function loadSettings() {
+    const saved = localStorage.getItem('traderSettings');
+    if (saved) {
+      settings = JSON.parse(saved);
+      document.getElementById('soundToggle').checked = settings.sound;
+      document.getElementById('autosaveToggle').checked = settings.autosave;
+    }
+  }
+
+  function saveSettings() {
+    localStorage.setItem('traderSettings', JSON.stringify(settings));
+  }
+
+  function toggleSound() {
+    settings.sound = document.getElementById('soundToggle').checked;
+    saveSettings();
+  }
+
+  function toggleAutosave() {
+    settings.autosave = document.getElementById('autosaveToggle').checked;
+    saveSettings();
+  }
+
+  function playSound(type) {
+    if (!settings.sound) return;
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    switch(type) {
+      case 'buy':
+        osc.frequency.value = 440;
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+        break;
+      case 'sell':
+        osc.frequency.value = 550;
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+        break;
+      case 'event':
+        osc.frequency.value = 200;
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+        break;
+      case 'upgrade':
+        osc.frequency.value = 660;
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+        break;
+    }
+    
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.2);
+  }
+
+  // ———————————————————— ALL GAMES IN ONE OBJECT ————————————————————
+  const GAMES = [
+    { 
+      id: "dopewars", title: "DOPE WARS", tagline: "Buy low. Sell high. Don't get busted.", currency: "Cash", antagonist: "Harry", cargo: "Trenchcoat", toll: "Travel", 
+      locations: ["Bronx", "Ghetto", "Central Park", "Manhattan", "Brooklyn", "Queens"], 
+      goods: ["Coke", "Heroin", "Acid", "Weed", "Speed", "Ludes"], 
+      basePrices: { "Coke":15000, "Heroin":8000, "Acid":2000, "Weed":400, "Speed":120, "Ludes":40 }, 
+      startCash:2000, startDebt:5500, maxDays:30, maxSpace:100, tolls:[50,100,150,200,250,300], debtInterest:1.05, travelDebt:1.02,
+      events: [
+        { 
+          text: "🚨 POLICE RAID! You had to dump your stash!",
+          effect: (player, prices) => {
+            let loss = 0;
+            currentGame.goods.forEach(g => {
+              loss += player.inventory[g];
+              player.inventory[g] = 0;
+            });
+            return `You lost ${loss} items!`;
+          }
+        },
+        {
+          text: "📈 MARKET BOOM! Coke prices are through the roof!",
+          effect: (player, prices) => {
+            prices['Coke'] *= 3;
+            return "Coke prices are 3x!";
+          }
+        },
+        {
+          text: "💊 Cops found a huge stash! Prices are crashing!",
+          effect: (player, prices) => {
+            Object.keys(prices).forEach(g => prices[g] *= 0.5);
+            return "All prices down 50%!";
+          }
+        },
+        {
+          text: "👮 CHECKPOINT! Pay bribe or lose half your goods!",
+          effect: (player, prices) => {
+            const bribe = 500;
+            if (player.cash >= bribe) {
+              player.cash -= bribe;
+              return `Paid $${bribe} bribe`;
+            } else {
+              currentGame.goods.forEach(g => player.inventory[g] = Math.floor(player.inventory[g] / 2));
+              return "Lost half your stash!";
+            }
+          }
+        }
+      ],
+      upgrades: [
+        { id: "coat", text: "+50 Trenchcoat Space", cost: 1000, effect: (p) => { p.maxSpace += 50; return "Bigger coat!"; } },
+        { id: "runner", text: "Fast Runner (-50% Travel Cost)", cost: 2000, effect: (p) => { p.upgrades.runner = true; return "You're faster now!"; } },
+        { id: "snitch", text: "Snitch Network (Know Prices)", cost: 3000, effect: (p) => { p.upgrades.snitch = true; return "Intel network active!"; } }
+      ]
+    },
+    { 
+      id: "lemonade", title: "LEMONADE STAND", tagline: "Sunny days. Sweet profits.", currency: "Coins", antagonist: "Mom", cargo: "Cooler", toll: "Ice", 
+      locations: ["Park", "Beach", "Mall", "School", "Fair"], 
+      goods: ["Lemonade", "Cookies", "Ice Cream"], 
+      basePrices: { "Lemonade":20, "Cookies":50, "Ice Cream":75 }, 
+      startCash:100, startDebt:0, maxDays:14, maxSpace:50, tolls:[2,5,10,8,15], debtInterest:1, travelDebt:1,
+      events: [
+        { 
+          text: "☀️ SUNNY DAY! People are thirsty! ☀️",
+          effect: (player, prices) => {
+            prices['Lemonade'] *= 1.8;
+            prices['Ice Cream'] *= 1.5;
+            return "Hot weather boost!";
+          }
+        },
+        {
+          text: "🌧️ RAIN-OUT! Everyone went home.",
+          effect: (player, prices) => {
+            Object.keys(prices).forEach(g => prices[g] *= 0.6);
+            return "Prices crashed!";
+          }
+        },
+        {
+          text: "💰 Found 50 Coins on the sidewalk!",
+          effect: (player, prices) => {
+            player.cash += 50;
+            return "+50 Coins!";
+          }
+        },
+        {
+          text: "🎪 Festival nearby! Huge crowds!",
+          effect: (player, prices) => {
+            Object.keys(prices).forEach(g => prices[g] *= 1.4);
+            return "All prices up 40%!";
+          }
+        },
+        {
+          text: "🦟 Bees everywhere! Customers scared off!",
+          effect: (player, prices) => {
+            prices['Lemonade'] *= 0.5;
+            return "Lemonade sales tanked!";
+          }
+        }
+      ],
+      upgrades: [
+        { id: "cooler", text: "+25 Cooler Space", cost: 150, effect: (p) => { p.maxSpace += 25; return "Bigger cooler!"; } },
+        { id: "recipe", text: "Secret Recipe (+20% Prices)", cost: 300, effect: (p) => { p.upgrades.recipe = true; return "Better lemonade!"; } },
+        { id: "sign", text: "Big Sign (+Customer Traffic)", cost: 200, effect: (p) => { p.upgrades.sign = true; return "More customers!"; } }
+      ]
+    },
+    { 
+      id: "silkroad", title: "SILK ROAD", tagline: "Dark web. Deep profits.", currency: "BTC", antagonist: "Feds", cargo: "Tor", toll: "VPN", 
+      locations: ["Onion", "DarkPool", "AlphaBay", "Dream", "Empire"], 
+      goods: ["BTC", "XMR", "LTC", "USDT"], 
+      basePrices: { "BTC":1, "XMR":0.003, "LTC":0.0015, "USDT":0.00003 }, 
+      startCash:0.1, startDebt:1, maxDays:21, maxSpace:10, tolls:[0.001,0.005,0.01,0.008,0.015], debtInterest:1.03, travelDebt:1.01,
+      events: [
+        {
+          text: "🚨 FBI HONEYPOT! Lost some coins!",
+          effect: (player, prices) => {
+            player.inventory['BTC'] = Math.floor(player.inventory['BTC'] * 0.7);
+            return "Lost 30% BTC!";
+          }
+        },
+        {
+          text: "📈 Bitcoin ETF approved! Pump incoming!",
+          effect: (player, prices) => {
+            prices['BTC'] *= 2;
+            return "BTC doubled!";
+          }
+        },
+        {
+          text: "🔒 Wallet encrypted by ransomware! Pay 0.05 BTC or lose all!",
+          effect: (player, prices) => {
+            if (player.cash >= 0.05) {
+              player.cash -= 0.05;
+              return "Paid ransom!";
+            } else {
+              player.cash *= 0.5;
+              return "Lost half your BTC!";
+            }
+          }
+        }
+      ],
+      upgrades: [
+        { id: "wallet", text: "+5 Wallet Space", cost: 0.05, effect: (p) => { p.maxSpace += 5; return "Bigger wallet!"; } },
+        { id: "vpn", text: "VPN Service (-50% Toll)", cost: 0.15, effect: (p) => { p.upgrades.vpn = true; return "VPN active!"; } },
+        { id: "tumbler", text: "Coin Tumbler (Safety)", cost: 0.3, effect: (p) => { p.upgrades.tumbler = true; return "Coins mixed!"; } }
+      ]
+    },
+    { 
+      id: "crypto", title: "CRYPTO HUSTLER", tagline: "Meme coins. Moon or bust.", currency: "Cash", antagonist: "Ronny", cargo: "Wallet", toll: "Gas", 
+      locations: ["Solana", "Ethereum", "Base", "Arbitrum", "Polygon"], 
+      goods: ["$DOGE", "$PEPE", "$SHIB", "$BONK"], 
+      basePrices: { "$DOGE":0.17, "$PEPE":0.000012, "$SHIB":0.000018, "$BONK":0.00001 }, 
+      startCash:2000, startDebt:5500, maxDays:30, maxSpace:5, tolls:[1,120,5,3,2], debtInterest:1.02, travelDebt:1.02,
+      events: [
+        {
+          text: "🐶 Elon tweeted about DOGE!",
+          effect: (player, prices) => {
+            prices['$DOGE'] *= 4;
+            return "DOGE to the moon!";
+          }
+        },
+        {
+          text: "🐸 PEPE trending on Twitter!",
+          effect: (player, prices) => {
+            prices['$PEPE'] *= 3;
+            return "PEPE pumping!";
+          }
+        },
+        {
+          text: "📉 Market crash! Everything down!",
+          effect: (player, prices) => {
+            Object.keys(prices).forEach(g => prices[g] *= 0.3);
+            return "Brutal crash!";
+          }
+        },
+        {
+          text: "🎰 Found a forgotten wallet! +$500!",
+          effect: (player, prices) => {
+            player.cash += 500;
+            return "Lucky find!";
+          }
+        }
+      ],
+      upgrades: [
+        { id: "wallet", text: "+5 Wallet Slots", cost: 500, effect: (p) => { p.maxSpace += 5; return "Wallet expanded!"; } },
+        { id: "vpn", text: "VPN (Evade SEC)", cost: 1000, effect: (p) => { p.upgrades.vpn = true; return "VPN Active!"; } },
+        { id: "bot", text: "Trading Bot (Auto-trade)", cost: 2000, effect: (p) => { p.upgrades.bot = true; return "Bot activated!"; } }
+      ]
+    },
+    { 
+      id: "nftflip", title: "NFT FLIP", tagline: "Mint. Pump. Rug.", currency: "ETH", antagonist: "Dev", cargo: "Wallet", toll: "Gas", 
+      locations: ["OpenSea", "Blur", "MagicEden", "LooksRare", "X2Y2"], 
+      goods: ["BAYC", "Punk", "Azuki", "Doodle"], 
+      basePrices: { "BAYC":80, "Punk":120, "Azuki":15, "Doodle":8 }, 
+      startCash:10, startDebt:50, maxDays:7, maxSpace:3, tolls:[0.1,0.5,1,0.3,0.2], debtInterest:1.1, travelDebt:1.05,
+      events: [
+        {
+          text: "🎨 Celebrity bought BAYC! Floor mooning!",
+          effect: (player, prices) => {
+            prices['BAYC'] *= 2.5;
+            return "BAYC pumped!";
+          }
+        },
+        {
+          text: "💀 Project rug pulled! All NFTs worthless!",
+          effect: (player, prices) => {
+            const lost = currentGame.goods[Math.floor(Math.random() * currentGame.goods.length)];
+            prices[lost] *= 0.1;
+            player.inventory[lost] = 0;
+            return `${lost} rugged!`;
+          }
+        },
+        {
+          text: "🔥 Bear market! Everything tanking!",
+          effect: (player, prices) => {
+            Object.keys(prices).forEach(g => prices[g] *= 0.6);
+            return "Market dumping!";
+          }
+        }
+      ],
+      upgrades: [
+        { id: "wallet", text: "+2 Wallet Slots", cost: 5, effect: (p) => { p.maxSpace += 2; return "More NFT slots!"; } },
+        { id: "whitelist", text: "WL Access (Better Mints)", cost: 15, effect: (p) => { p.upgrades.whitelist = true; return "WL secured!"; } },
+        { id: "flash", text: "Flash Loan (Buy More)", cost: 25, effect: (p) => { p.upgrades.flash = true; return "Flash loans enabled!"; } }
+      ]
+    },
+    { 
+      id: "pirate", title: "PIRATE RUM RUNNER", tagline: "Smuggle rum. Evade navy.", currency: "Gold", antagonist: "Blackbeard", cargo: "Hold", toll: "Bribe", 
+      locations: ["Tortuga", "Port Royal", "Nassau", "Havana", "Barbados"], 
+      goods: ["Rum", "Spices", "Guns", "Silk"], 
+      basePrices: { "Rum":200, "Spices":800, "Guns":1200, "Silk":500 }, 
+      startCash:500, startDebt:3000, maxDays:25, maxSpace:20, tolls:[50,100,200,150,75], debtInterest:1.03, travelDebt:1.02,
+      events: [
+        {
+          text: "⚔️ NAVY BLOCKADE! Pay 300 gold or lose cargo!",
+          effect: (player, prices) => {
+            if (player.cash >= 300) {
+              player.cash -= 300;
+              return "Bribed the navy!";
+            } else {
+              currentGame.goods.forEach(g => player.inventory[g] = Math.floor(player.inventory[g] * 0.5));
+              return "Lost half your cargo!";
+            }
+          }
+        },
+        {
+          text: "🏴‍☠️ Found a treasure chest! +500 gold!",
+          effect: (player, prices) => {
+            player.cash += 500;
+            return "Treasure found!";
+          }
+        },
+        {
+          text: "🌊 STORM! Your ship was damaged!",
+          effect: (player, prices) => {
+            const damage = 200;
+            player.cash -= damage;
+            return `Lost ${damage} gold in repairs!`;
+          }
+        },
+        {
+          text: "🍺 Rum shortage! Prices soaring!",
+          effect: (player, prices) => {
+            prices['Rum'] *= 2.5;
+            return "Rum prices up!";
+          }
+        }
+      ],
+      upgrades: [
+        { id: "hold", text: "+10 Cargo Hold", cost: 800, effect: (p) => { p.maxSpace += 10; return "Bigger hold!"; } },
+        { id: "cannons", text: "Cannons (Defend Ship)", cost: 1500, effect: (p) => { p.upgrades.cannons = true; return "Armed vessel!"; } },
+        { id: "crew", text: "Expert Crew (Better Deals)", cost: 1200, effect: (p) => { p.upgrades.crew = true; return "Skilled crew hired!"; } }
+      ]
+    },
+    { 
+      id: "hollywood", title: "HOLLYWOOD HUSTLER", tagline: "From indie to Oscar.", currency: "Box Office", antagonist: "Rex", cargo: "Reel", toll: "Permit", 
+      locations: ["Garage", "Sundance", "Cannes", "Hollywood", "Netflix"], 
+      goods: ["Short", "Indie", "Blockbuster", "Streaming"], 
+      basePrices: { "Short":5000, "Indie":30000, "Blockbuster":80000, "Streaming":15000 }, 
+      startCash:50000, startDebt:250000, maxDays:40, maxSpace:8, tolls:[50,500,2000,1000,100], debtInterest:1.015, travelDebt:1.015,
+      events: [
+        {
+          text: "🏆 Your indie won an award! +$50k!",
+          effect: (player, prices) => {
+            player.cash += 50000;
+            return "Oscar buzz!";
+          }
+        },
+        {
+          text: "💣 Your blockbuster flopped! Lost investment!",
+          effect: (player, prices) => {
+            player.cash -= 30000;
+            return "Box office bomb!";
+          }
+        },
+        {
+          text: "📺 Streaming wars! Netflix paying premium!",
+          effect: (player, prices) => {
+            prices['Streaming'] *= 2;
+            return "Streaming boom!";
+          }
+        },
+        {
+          text: "🎬 A-list actor attached! Prices up!",
+          effect: (player, prices) => {
+            Object.keys(prices).forEach(g => prices[g] *= 1.3);
+            return "Star power!";
+          }
+        }
+      ],
+      upgrades: [
+        { id: "studio", text: "+3 Film Projects", cost: 100000, effect: (p) => { p.maxSpace += 3; return "Studio expanded!"; } },
+        { id: "agent", text: "Top Agent (Better Deals)", cost: 75000, effect: (p) => { p.upgrades.agent = true; return "Elite representation!"; } },
+        { id: "marketing", text: "Marketing Team (+Sales)", cost: 50000, effect: (p) => { p.upgrades.marketing = true; return "Viral campaign!"; } }
+      ]
+    },
+    { 
+      id: "influencer", title: "VIRAL INFLUENCER", tagline: "0 to 1M in 30 days.", currency: "Followers", antagonist: "Chloe", cargo: "Storage", toll: "Data", 
+      locations: ["Bedroom", "Mall", "LA", "Miami", "Vegas"], 
+      goods: ["GRWM", "Prank", "Thirst", "Mukbang"], 
+      basePrices: { "GRWM":800, "Prank":1500, "Thirst":2000, "Mukbang":1200 }, 
+      startCash:1000, startDebt:5000, maxDays:30, maxSpace:64, tolls:[5,50,100,75,150], debtInterest:1.02, travelDebt:1.02,
+      events: [
+        {
+          text: "📱 Your video went VIRAL! +10k followers!",
+          effect: (player, prices) => {
+            player.cash += 10000;
+            return "Viral sensation!";
+          }
+        },
+        {
+          text: "😱 CANCELLED! Lost sponsorships!",
+          effect: (player, prices) => {
+            player.cash -= 3000;
+            return "Damage control needed!";
+          }
+        },
+        {
+          text: "💰 Brand deal! +$5k!",
+          effect: (player, prices) => {
+            player.cash += 5000;
+            return "Sponsored!";
+          }
+        },
+        {
+          text: "🔥 Algorithm boost! All content up!",
+          effect: (player, prices) => {
+            Object.keys(prices).forEach(g => prices[g] *= 1.5);
+            return "Algorithm loves you!";
+          }
+        }
+      ],
+      upgrades: [
+        { id: "storage", text: "+32 Cloud Storage", cost: 2000, effect: (p) => { p.maxSpace += 32; return "More storage!"; } },
+        { id: "editor", text: "Video Editor (Quality+)", cost: 4000, effect: (p) => { p.upgrades.editor = true; return "Pro edits!"; } },
+        { id: "camera", text: "4K Camera (Views+)", cost: 3000, effect: (p) => { p.upgrades.camera = true; return "Crisp quality!"; } }
+      ]
+    },
+    { 
+      id: "pimp", title: "PIMP & HO$", tagline: "Stack paper. Rule the game.", currency: "Cash", antagonist: "Rex", cargo: "Crew", toll: "Gas", 
+      locations: ["Alley", "Motel", "Club", "Hotel", "Mansion"], 
+      goods: ["Corner", "Car", "VIP", "Escort"], 
+      basePrices: { "Corner":100, "Car":300, "VIP":5000, "Escort":2000 }, 
+      startCash:500, startDebt:10000, maxDays:30, maxSpace:5, tolls:[10,50,100,200,500], debtInterest:1.02, travelDebt:1.02,
+      events: [
+        {
+          text: "🚓 Vice raid! Pay $500 or lose workers!",
+          effect: (player, prices) => {
+            if (player.cash >= 500) {
+              player.cash -= 500;
+              return "Bribed the cops!";
+            } else {
+              currentGame.goods.forEach(g => player.inventory[g] = Math.floor(player.inventory[g] * 0.6));
+              return "Lost some workers!";
+            }
+          }
+        },
+        {
+          text: "💎 VIP whale in town! Prices up!",
+          effect: (player, prices) => {
+            prices['VIP'] *= 2;
+            prices['Escort'] *= 1.5;
+            return "High rollers paying!";
+          }
+        },
+        {
+          text: "🎰 Casino convention! Demand high!",
+          effect: (player, prices) => {
+            Object.keys(prices).forEach(g => prices[g] *= 1.4);
+            return "Business booming!";
+          }
+        }
+      ],
+      upgrades: [
+        { id: "crew", text: "+3 Crew Size", cost: 2000, effect: (p) => { p.maxSpace += 3; return "Bigger crew!"; } },
+        { id: "security", text: "Security Team (Safety)", cost: 5000, effect: (p) => { p.upgrades.security = true; return "Protected!"; } },
+        { id: "lawyer", text: "Top Lawyer (Legal Shield)", cost: 8000, effect: (p) => { p.upgrades.lawyer = true; return "Legal protection!"; } }
+      ]
+    },
+    { 
+      id: "postapoc", title: "POST-APOC TRADER", tagline: "Caps. Ammo. Survive.", currency: "Caps", antagonist: "Kane", cargo: "Backpack", toll: "Fuel", 
+      locations: ["Vault", "Wasteland", "Megaton", "Rivet City", "Tenpenny"], 
+      goods: ["Ammo", "Water", "Meds", "Food"], 
+      basePrices: { "Ammo":50, "Water":30, "Meds":100, "Food":25 }, 
+      startCash:200, startDebt:1000, maxDays:20, maxSpace:15, tolls:[5,20,50,30,40], debtInterest:1.04, travelDebt:1.03,
+      events: [
+        {
+          text: "☢️ RADIATION STORM! Lost some supplies!",
+          effect: (player, prices) => {
+            currentGame.goods.forEach(g => player.inventory[g] = Math.floor(player.inventory[g] * 0.8));
+            return "Supplies damaged!";
+          }
+        },
+        {
+          text: "🎯 Found a weapons cache! +100 caps!",
+          effect: (player, prices) => {
+            player.cash += 100;
+            return "Lucky scavenge!";
+          }
+        },
+        {
+          text: "🏚️ Raiders took over a location! Prices up!",
+          effect: (player, prices) => {
+            prices['Ammo'] *= 2;
+            return "Ammo scarce!";
+          }
+        },
+        {
+          text: "💧 Water purifier fixed! Water prices crash!",
+          effect: (player, prices) => {
+            prices['Water'] *= 0.4;
+            return "Water abundant!";
+          }
+        }
+      ],
+      upgrades: [
+        { id: "pack", text: "+8 Backpack Space", cost: 300, effect: (p) => { p.maxSpace += 8; return "Bigger pack!"; } },
+        { id: "armor", text: "Power Armor (Protection)", cost: 800, effect: (p) => { p.upgrades.armor = true; return "Heavily armored!"; } },
+        { id: "scavenger", text: "Scavenger Perk (Find More)", cost: 500, effect: (p) => { p.upgrades.scavenger = true; return "Expert scavenger!"; } }
+      ]
+    }
+  ];
+
+  let currentGame = null, player = {}, prices = {}, prevPrices = {}, eventLog = "";
+  const screens = { 
+    menu: document.getElementById("menu"), 
+    game: document.getElementById("game"),
+    end: document.getElementById("endScreen"),
+    leaderboard: document.getElementById("leaderboardScreen"),
+    settings: document.getElementById("settingsScreen")
+  };
+
+  // ———————————————————— MENU ————————————————————
+  function buildMenu() {
+    const list = document.getElementById("gameList");
+    list.innerHTML = "";
+    GAMES.forEach(g => {
+      const btn = document.createElement("div");
+      btn.className = "game-btn";
+      btn.textContent = g.title;
+      btn.onclick = () => startGame(g);
+      list.appendChild(btn);
+    });
+  }
+
+  function showMenu() {
+    screens.menu.classList.remove("hidden");
+    screens.game.classList.add("hidden");
+    screens.end.classList.add("hidden");
+    screens.leaderboard.classList.add("hidden");
+    screens.settings.classList.add("hidden");
+    currentGame = null;
+    buildMenu();
+  }
+
+  function showSettings() {
+    Object.values(screens).forEach(v=>v.classList.add("hidden"));
+    screens.settings.classList.remove("hidden");
+  }
+
+  // ———————————————————— GAME ENGINE ————————————————————
+  function startGame(game) {
+    currentGame = game;
+    resetGame();
+    loadGame(); // Try to load saved game
+    applyTheme();
+    buildGameUI();
+    showScreen("game");
+    updateUI();
+    randomEvent();
+  }
+
+  function resetGame() {
+    player = {
+      cash: currentGame.startCash, 
+      debt: currentGame.startDebt, 
+      day:1, 
+      location:0,
+      inventory: Object.fromEntries(currentGame.goods.map(g=>[g,0])),
+      maxSpace: currentGame.maxSpace,
+      upgrades: {}
+    };
+    prices = {...currentGame.basePrices};
+    prevPrices = {...currentGame.basePrices};
+    eventLog = "";
+    updatePrices();
+  }
+
+  function saveGame() {
+    if (!settings.autosave || !currentGame) return;
+    const saveKey = `traderSave_${currentGame.id}`;
+    const saveData = {
+      player: player,
+      prices: prices,
+      prevPrices: prevPrices,
+      eventLog: eventLog
+    };
+    localStorage.setItem(saveKey, JSON.stringify(saveData));
+  }
+
+  function loadGame() {
+    if (!settings.autosave || !currentGame) return;
+    const saveKey = `traderSave_${currentGame.id}`;
+    const saved = localStorage.getItem(saveKey);
+    if (saved) {
+      const data = JSON.parse(saved);
+      player = data.player;
+      prices = data.prices;
+      prevPrices = data.prevPrices;
+      eventLog = data.eventLog || "";
+    }
+  }
+
+  function applyTheme() {
+    document.getElementById("title").textContent = currentGame.title;
+    document.getElementById("tagline").textContent = currentGame.tagline;
+  }
+
+  function showScreen(s) {
+    Object.values(screens).forEach(v=>v.classList.add("hidden"));
+    screens[s].classList.remove("hidden");
+  }
+
+  function getPrice(good) {
+    const base = prices[good];
+    const fluct = 0.5 + Math.random()*1.5;
+    const locMod = 0.8 + player.location*0.08;
+    let finalPrice = base * fluct * locMod;
+    
+    // Apply upgrade bonuses
+    if (player.upgrades.recipe && currentGame.id === 'lemonade') finalPrice *= 1.2;
+    if (player.upgrades.crew && currentGame.id === 'pirate') finalPrice *= 1.1;
+    if (player.upgrades.agent && currentGame.id === 'hollywood') finalPrice *= 1.15;
+    
+    return Math.max(0.0001, finalPrice);
+  }
+
+  function priceArrow(good) {
+    const cur = getPrice(good); 
+    const prev = prevPrices[good] || cur; 
+    const diff = cur/prev - 1;
+    if (diff > 0.05) return '<span class="price-up">↗️</span>';
+    if (diff < -0.05) return '<span class="price-down">↘️</span>';
+    return '→';
+  }
+
+  function updatePrices() {
+    prevPrices = {...prices};
+    currentGame.goods.forEach(g => {
+      let change = 0.7 + Math.random()*0.6;
+      if (Math.random() < 0.05) change *= Math.random() < 0.5 ? 0.1 : 5;
+      prices[g] *= change;
+    });
+  }
+
+  function buildGameUI() {
+    const screen = document.getElementById("gameScreen");
+    screen.innerHTML = `
+      <div class="stats">
+        📅 Day: <span id="day">1</span>/${currentGame.maxDays} | 
+        💰 ${currentGame.currency}: <span id="cash">${player.cash}</span> | 
+        💳 Debt: <span id="debt">${player.debt}</span><br>
+        📍 Location: <span id="location">${currentGame.locations[0]}</span> | 
+        🎒 ${currentGame.cargo}: <span id="space">0</span>/<span id="maxSpace">${currentGame.maxSpace}</span>
+      </div>
+      <div id="eventLog"></div>
+      <h3>💼 GOODS</h3>
+      <div id="goods"></div>
+      
+      <h3>⬆️ UPGRADES</h3>
+      <div id="upgrades" class="item"></div>
+
+      <div style="margin-top: 15px;">
+        <button onclick="travel()">🚗 Travel (Pay ${currentGame.toll})</button>
+        <button onclick="payDebt()">💸 Pay ${currentGame.antagonist}</button>
+        <button onclick="endDay()">⏭️ End Day</button>
+      </div>
+    `;
+  }
+
+  function updateUI() {
+    document.getElementById("day").textContent = player.day;
+    document.getElementById("cash").textContent = formatNumber(player.cash);
+    document.getElementById("debt").textContent = formatNumber(player.debt);
+    document.getElementById("location").textContent = currentGame.locations[player.location];
+    document.getElementById("space").textContent = totalHeld();
+    document.getElementById("maxSpace").textContent = player.maxSpace;
+
+    const div = document.getElementById("goods"); 
+    div.innerHTML = "";
+    currentGame.goods.forEach(good => {
+      const price = getPrice(good);
+      const row = document.createElement("div"); 
+      row.className = "item";
+      row.innerHTML = `
+        <strong>${good}</strong> — ${formatPrice(price)} ${priceArrow(good)} (Hold: ${player.inventory[good]})<br>
+        <button onclick="buy('${good}')">💵 Buy</button>
+        <input type="number" id="amt-${good}" min="1" value="1" style="width:50px">
+        <button onclick="sell('${good}')">💰 Sell</button>
+        <button onclick="buyMax('${good}')">⚡ Max</button>
+        <button onclick="sellAll('${good}')">🔄 All</button>
+      `;
+      div.appendChild(row);
+    });
+
+    const upgDiv = document.getElementById("upgrades");
+    if (upgDiv) {
+      upgDiv.innerHTML = "";
+      if (!currentGame.upgrades || currentGame.upgrades.length === 0) {
+        upgDiv.innerHTML = "<small>No upgrades available.</small>";
+      } else {
+        currentGame.upgrades.forEach(upg => {
+          const isBought = player.upgrades[upg.id] === true;
+          const btn = document.createElement("button");
+          btn.textContent = `${upg.text} (${formatPrice(upg.cost)})`;
+          if (isBought) {
+            btn.disabled = true;
+            btn.textContent += " ✅";
+            btn.className = "upgrade-bought";
+          } else {
+            btn.onclick = () => buyUpgrade(upg.id);
+          }
+          upgDiv.appendChild(btn);
+        });
+      }
+    }
+
+    document.getElementById("eventLog").innerHTML = eventLog;
+    saveGame(); // Auto-save after each UI update
+  }
+
+  function formatNumber(n) { 
+    return n.toLocaleString(undefined, { maximumFractionDigits: 4 }); 
+  }
+
+  function formatPrice(p) {
+    const formatted = p.toLocaleString(undefined, { maximumFractionDigits: 4 });
+    const c = currentGame.currency;
+    if (c === "Cash" || c === "Box Office") return `$${formatted}`;
+    if (c === "Followers" || c === "Caps" || c === "Gold" || c === "Coins" || c === "BTC" || c === "ETH") {
+        return `${formatted} ${c}`;
+    }
+    return `$${formatted}`;
+  }
+
+  function totalHeld() { 
+    return Object.values(player.inventory).reduce((a,b)=>a+b,0); 
+  }
+
+  function payToll() {
+    let toll = currentGame.tolls[player.location];
+    
+    // Apply upgrade discounts
+    if (player.upgrades.runner && currentGame.id === 'dopewars') toll *= 0.5;
+    if (player.upgrades.vpn && (currentGame.id === 'crypto' || currentGame.id === 'silkroad')) toll *= 0.5;
+    
+    if (player.cash < toll) { 
+      alert(`Not enough for ${currentGame.toll}!`); 
+      return false; 
+    }
+    player.cash -= toll; 
+    return true;
+  }
+
+  function buy(good) { 
+    if(!payToll()) return; 
+    const amt = parseInt(document.getElementById(`amt-${good}`).value)||1; 
+    const cost = getPrice(good)*amt;
+    if(player.cash < cost) { 
+      alert("Not enough cash!"); 
+      return; 
+    } 
+    if(totalHeld()+amt > player.maxSpace) { 
+      alert(`${currentGame.cargo} full!`); 
+      return; 
+    }
+    player.cash -= cost; 
+    player.inventory[good] += amt; 
+    playSound('buy');
+    updateUI(); 
+  }
+
+  function sell(good) { 
+    if(!payToll()) return; 
+    const amt = parseInt(document.getElementById(`amt-${good}`).value)||1;
+    if(player.inventory[good] < amt) { 
+      alert("Not enough!"); 
+      return; 
+    } 
+    const gain = getPrice(good)*amt;
+    player.cash += gain; 
+    player.inventory[good] -= amt; 
+    playSound('sell');
+    updateUI(); 
+  }
+
+  function buyMax(good) {
+    const price = getPrice(good);
+    if (price <= 0) return;
+    let toll = currentGame.tolls[player.location];
+    
+    if (player.upgrades.runner && currentGame.id === 'dopewars') toll *= 0.5;
+    if (player.upgrades.vpn && (currentGame.id === 'crypto' || currentGame.id === 'silkroad')) toll *= 0.5;
+    
+    if (player.cash <= toll) { 
+      alert(`Not enough for ${currentGame.toll}!`); 
+      return; 
+    }
+    
+    const spaceLeft = player.maxSpace - totalHeld();
+    const canAfford = Math.floor((player.cash - toll) / price);
+    const amt = Math.max(0, Math.min(spaceLeft, canAfford));
+    
+    if (amt === 0) { 
+      alert("Can't buy any!"); 
+      return; 
+    }
+    document.getElementById(`amt-${good}`).value = amt;
+    buy(good);
+  }
+
+  function sellAll(good) {
+    const amt = player.inventory[good];
+    if (amt === 0) return;
+    document.getElementById(`amt-${good}`).value = amt;
+    sell(good);
+  }
+
+  function buyUpgrade(upgradeId) {
+    const upgrade = currentGame.upgrades.find(u => u.id === upgradeId);
+    if (!upgrade) return;
+
+    if (player.cash < upgrade.cost) {
+      alert("Not enough cash!"); 
+      return;
+    }
+    
+    player.cash -= upgrade.cost;
+    const message = upgrade.effect(player);
+    player.upgrades[upgradeId] = true;
+    
+    playSound('upgrade');
+    eventLog = `<p class="good-event">🎉 ${message}</p>` + eventLog;
+    updateUI();
+  }
+
+  function travel() {
+    player.location = (player.location + 1 + Math.floor(Math.random()*2)) % currentGame.locations.length;
+    player.debt *= currentGame.travelDebt;
+    eventLog = `<p>🚗 Traveled to ${currentGame.locations[player.location]}! Debt +${((currentGame.travelDebt-1)*100).toFixed(0)}%</p>` + eventLog;
+    updatePrices(); 
+    randomEvent(); 
+    updateUI();
+  }
+
+  function payDebt() {
+    const amt = parseInt(prompt(`Pay ${currentGame.antagonist} how much?`, Math.min(1000, Math.floor(player.cash/2)))) || 0;
+    if (amt <= 0 || player.cash < amt) { 
+      alert("Not enough cash!"); 
+      return; 
+    }
+    player.cash -= amt; 
+    player.debt -= amt;
+    eventLog = `<p>💸 Paid ${formatPrice(amt)} to ${currentGame.antagonist}</p>` + eventLog;
+    updateUI();
+  }
+
+  function randomEvent() {
+    if (Math.random() > 0.3 || !currentGame.events) return;
+
+    const event = currentGame.events[Math.floor(Math.random() * currentGame.events.length)];
+    const message = event.effect(player, prices);
+    
+    playSound('event');
+    eventLog = `<p class="event">${event.text}<br><small>${message}</small></p>` + eventLog;
+    updateUI();
+  }
+
+  function endDay() {
+    player.day++; 
+    player.debt *= currentGame.debtInterest;
+    updatePrices(); 
+    randomEvent();
+    
+    if (player.day > currentGame.maxDays) {
+      endGame();
+    } else {
+      updateUI();
+    }
+  }
+
+  function endGame() {
+    const score = player.cash - player.debt;
+    document.getElementById("finalScore").innerHTML = `
+      🏁 <strong>${currentGame.title}</strong><br><br>
+      Final ${currentGame.currency}: ${formatNumber(player.cash)}<br>
+      Final Debt: ${formatNumber(player.debt)}<br>
+      <strong style="font-size: 1.5em;">Net Worth: ${formatNumber(score)}</strong><br><br>
+      ${score > 0 ? "✅ YOU SURVIVED!" : "❌ BUSTED!"}
+    `;
+    showScreen("end");
+    
+    // Clear the save
+    if (settings.autosave) {
+      const saveKey = `traderSave_${currentGame.id}`;
+      localStorage.removeItem(saveKey);
+    }
+  }
+
+  function saveScore() {
+    const name = document.getElementById("playerName").value.trim() || "Anon";
+    const score = Math.floor(player.cash - player.debt);
+    const lbKey = `traderLB_${currentGame.id}`;
+    const scores = JSON.parse(localStorage.getItem(lbKey) || "[]");
+    
+    scores.push({ 
+      name, 
+      score, 
+      date: new Date().toLocaleDateString(),
+      day: player.day 
+    });
+    scores.sort((a, b) => b.score - a.score);
+    localStorage.setItem(lbKey, JSON.stringify(scores.slice(0, 10)));
+    
+    alert("Score saved! 🎉");
+    showLeaderboard(true);
+  }
+
+  function showLeaderboard(comingFromGame = false) {
+    const div = document.getElementById("leaderboard");
+    
+    if (comingFromGame && currentGame) {
+      const lbKey = `traderLB_${currentGame.id}`;
+      const scores = JSON.parse(localStorage.getItem(lbKey) || "[]");
+      div.innerHTML = `<h3>${currentGame.title}</h3><hr>`;
+      if (scores.length) {
+        scores.forEach((s, i) => {
+          div.innerHTML += `
+            <div class="item">
+              <strong>#${i+1}</strong> ${s.name} — ${s.score.toLocaleString()}<br>
+              <small>Day ${s.day || '?'} • ${s.date}</small>
+            </div>
+          `;
+        });
+      } else {
+        div.innerHTML += "<p>No scores yet! Be the first!</p>";
+      }
+    } else {
+      div.innerHTML = "<h3>Select a Leaderboard</h3><hr>";
+      GAMES.forEach(g => {
+        const btn = document.createElement("button");
+        btn.textContent = g.title;
+        btn.style.display = "block";
+        btn.style.width = "90%";
+        btn.style.margin = "5px auto";
+        btn.onclick = () => {
+          currentGame = g;
+          showLeaderboard(true);
+        };
+        div.appendChild(btn);
+      });
+    }
+    showScreen("leaderboard");
+  }
+
+  function clearLeaderboard() {
+    if (!currentGame) return;
+    if (confirm(`Clear ${currentGame.title} leaderboard?`)) {
+      const lbKey = `traderLB_${currentGame.id}`;
+      localStorage.removeItem(lbKey);
+      showLeaderboard(true);
+    }
+  }
+
+  function clearAllData() {
+    if (confirm("Clear ALL game data? (saves, leaderboards, settings)")) {
+      localStorage.clear();
+      alert("All data cleared!");
+      location.reload();
+    }
+  }
+
+  // ———————————————————— INIT ————————————————————
+  loadSettings();
+  showMenu();
+  
+  window.startGame = startGame;
+  window.showMenu = showMenu;
+  window.showSettings = showSettings;
+  window.travel = travel;
+  window.payDebt = payDebt;
+  window.endDay = endDay;
+  window.buy = buy;
+  window.sell = sell;
+  window.buyMax = buyMax;
+  window.sellAll = sellAll;
+  window.buyUpgrade = buyUpgrade;
+  window.saveScore = saveScore;
+  window.showLeaderboard = showLeaderboard;
+  window.clearLeaderboard = clearLeaderboard;
+  window.clearAllData = clearAllData;
+  window.toggleSound = toggleSound;
+  window.toggleAutosave = toggleAutosave;
+  
+</script>
+</body>
+</html>
